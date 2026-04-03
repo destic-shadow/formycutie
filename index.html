@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Cute Doctor Wifey's Suite</title>
+<title>My Wifey's Renal Pathology Suite</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -189,11 +189,12 @@
     position: absolute;
     inset: 0;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
     flex-direction: column;
     gap: 12px;
     z-index: 10;
+    padding: 20px;
   }
   .quiz-overlay .q-title {
     font-family: 'Space Mono', monospace;
@@ -201,10 +202,18 @@
     color: var(--warn);
     letter-spacing: 2px;
     text-align: center;
+    background: rgba(13, 17, 23, 0.8);
+    padding: 10px 14px;
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
   }
   .quiz-overlay .q-sub {
     font-size: 12px;
     color: var(--muted);
+    background: rgba(13, 17, 23, 0.8);
+    padding: 8px 12px;
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
   }
 
   /* Slide info bar */

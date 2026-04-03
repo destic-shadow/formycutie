@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Wifey's Renal Pathology Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent2: #f0883e;
+    --accent3: #56d364;
+    --danger: #f85149;
+    --warn: #e3b341;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --kidney: #ff7b7b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(88,166,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(88,166,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .everything { position: relative; z-index: 1; }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    padding: 2.5rem 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(88,166,255,0.06) 0%, transparent 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  header::after {
+    content: '🫘';
+    position: absolute;
+    font-size: 200px;
+    opacity: 0.04;
+    right: -30px;
+    top: -30px;
+    pointer-events: none;
+  }
+  header .label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--kidney);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(22px, 4vw, 36px);
+    color: var(--text);
+    font-weight: 400;
+    margin-bottom: 6px;
+  }
+  header h1 span { color: var(--kidney); }
+  header p { font-size: 13px; color: var(--muted); }
+
+  /* MAIN LAYOUT */
+  .main-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 0;
+    max-width: 1300px;
+    margin: 0 auto;
+    min-height: calc(100vh - 140px);
+  }
+
+  /* LEFT: VIEWER */
+  .viewer-panel {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .viewer-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-wrap: wrap;
+  }
+  .toolbar-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: var(--danger); }
+  .dot-y { background: var(--warn); }
+  .dot-g { background: var(--accent3); }
+  .toolbar-spacer { flex: 1; }
+  .toolbar-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* Slide image area */
+  .slide-stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: #0a0e14;
+    position: relative;
+    min-height: 380px;
+  }
+  .slide-img-wrap {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    max-width: 580px;
+    width: 100%;
+    box-shadow: 0 0 60px rgba(88,166,255,0.08);
+    transition: box-shadow 0.3s;
+  }
+  .slide-img-wrap:hover { box-shadow: 0 0 80px rgba(88,166,255,0.15); }
+  .slide-img-wrap img {
+    width: 100%;
+    display: block;
+    transition: filter 0.4s, transform 0.4s;
+  }
+  .slide-img-wrap img.quiz-blur { filter: blur(18px) brightness(0.4); }
+
+  /* Annotation overlays */
+  .anno-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .anno-pulse {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid var(--kidney);
+    animation: pulse-ring 1.5s ease-out infinite;
+    pointer-events: none;
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(0.9); opacity: 1; }
+    100% { transform: scale(1.4); opacity: 0; }
+  }
+
+  /* Quiz overlay */
+  .quiz-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 10;
+  }
+  .quiz-overlay .q-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--warn);
+    letter-spacing: 2px;
+    text-align: center;
+  }
+  .quiz-overlay .q-sub {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* Slide info bar */
+  .slide-infobar {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .infobar-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+  .tag-nephritic { background: rgba(248,81,73,0.15); color: var(--danger); border: 1px solid rgba(248,81,73,0.3); }
+  .tag-nephrotic { background: rgba(88,166,255,0.12); color: var(--accent); border: 1px solid rgba(88,166,255,0.3); }
+  .tag-mixed { background: rgba(227,179,65,0.12); color: var(--warn); border: 1px solid rgba(227,179,65,0.3); }
+  .tag-normal { background: rgba(86,211,100,0.12); color: var(--accent3); border: 1px solid rgba(86,211,100,0.3); }
+  .tag-rpgn { background: rgba(240,136,62,0.15); color: var(--accent2); border: 1px solid rgba(240,136,62,0.3); }
+  .infobar-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .infobar-stain { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); margin-left: auto; }
+
+  /* TABS for condition selection */
+  .condition-tabs {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .cond-tab {
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    border-right: 1px solid var(--border);
+    transition: all 0.2s;
+    line-height: 1.4;
+    border-bottom: 2px solid transparent;
+  }
+  .cond-tab:last-child { border-right: none; }
+  .cond-tab:hover { background: var(--surface2); color: var(--text); }
+  .cond-tab.active { color: var(--kidney); border-bottom-color: var(--kidney); background: rgba(255,123,123,0.05); }
+  .cond-tab .tab-num {
+    display: block;
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: inherit;
+    margin-bottom: 2px;
+  }
+
+  /* RIGHT: SIDEBAR */
+  .sidebar {
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .sidebar-section {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px;
+  }
+  .sidebar-section h3 {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  /* Buttons */
+  .btn {
+    width: 100%;
+    padding: 11px 14px;
+    border: none;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .btn:last-child { margin-bottom: 0; }
+  .btn-quiz { background: rgba(240,136,62,0.15); color: var(--accent2); border: 1px solid rgba(240,136,62,0.4); }
+  .btn-quiz:hover { background: rgba(240,136,62,0.25); }
+  .btn-quiz.running { background: rgba(248,81,73,0.15); color: var(--danger); border-color: rgba(248,81,73,0.4); }
+  .btn-flip { background: rgba(88,166,255,0.12); color: var(--accent); border: 1px solid rgba(88,166,255,0.3); }
+  .btn-flip:hover { background: rgba(88,166,255,0.2); }
+  .btn-next { background: rgba(86,211,100,0.1); color: var(--accent3); border: 1px solid rgba(86,211,100,0.3); }
+  .btn-next:hover { background: rgba(86,211,100,0.18); }
+
+  /* Feedback */
+  #feedback {
+    display: none;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 8px;
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.5px;
+  }
+  .fb-correct { background: rgba(86,211,100,0.12); color: var(--accent3); border: 1px solid rgba(86,211,100,0.3); }
+  .fb-wrong { background: rgba(248,81,73,0.12); color: var(--danger); border: 1px solid rgba(248,81,73,0.3); }
+
+  /* Score tracker */
+  .score-row {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .score-pip {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .score-pip.hit { background: var(--accent3); }
+  .score-pip.miss { background: var(--danger); }
+
+  /* Clinical data */
+  .data-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: flex-start;
+  }
+  .data-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    min-width: 70px;
+    padding-top: 2px;
+  }
+  .data-value {
+    font-size: 12.5px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Feature list */
+  .feature-list {
+    list-style: none;
+    padding: 0;
+  }
+  .feature-list li {
+    font-size: 12px;
+    color: var(--muted);
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(48,54,61,0.5);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    line-height: 1.5;
+  }
+  .feature-list li::before {
+    content: '›';
+    color: var(--kidney);
+    font-size: 14px;
+    line-height: 1.3;
+    flex-shrink: 0;
+  }
+  .feature-list li:last-child { border-bottom: none; }
+
+  /* Key finding badge */
+  .key-finding {
+    background: rgba(255,123,123,0.1);
+    border: 1px solid rgba(255,123,123,0.3);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--kidney);
+    font-weight: 500;
+    margin-top: 8px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.3px;
+    line-height: 1.6;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    background: var(--border);
+    border-radius: 4px;
+    height: 3px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--kidney);
+    transition: width 0.4s ease;
+    border-radius: 4px;
+  }
+  .progress-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-align: right;
+    margin-bottom: 12px;
+  }
+
+  /* Quiz answer buttons */
+  .answer-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .answer-btn {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+  }
+  .answer-btn:hover:not(:disabled) { border-color: var(--accent); background: rgba(88,166,255,0.08); }
+  .answer-btn.correct { background: rgba(86,211,100,0.12); border-color: var(--accent3); color: var(--accent3); }
+  .answer-btn.wrong { background: rgba(248,81,73,0.12); border-color: var(--danger); color: var(--danger); }
+
+  /* Final score */
+  .final-score {
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+  .final-score .big-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 72px;
+    color: var(--kidney);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .final-score .big-label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+  .final-score .love-msg {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+    opacity: 0.8;
+  }
+
+  /* Scrollable sidebar content */
+  .sidebar-scroll {
+    flex: 1;
+    overflow-y: auto;
+  }
+  .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+  .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* Responsive */
+  @media (max-width: 800px) {
+    .main-layout { grid-template-columns: 1fr; }
+    .viewer-panel { border-right: none; border-bottom: 1px solid var(--border); }
+    .condition-tabs { grid-template-columns: repeat(5, 1fr); }
+    .cond-tab { font-size: 9px; padding: 8px 3px; }
+  }
+
+  /* Fade in animation */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in { animation: fadeUp 0.4s ease both; }
+</style>
+</head>
+<body>
+<div class="everything">
+
+<header>
+  <div class="label">Renal Pathology · Clinical Study Suite</div>
+  <h1>My Wifey's <span>Glomerular Disease</span> Trainer</h1>
+  <p>5 conditions · image-based learning · quiz mode · you've got this 💙</p>
+</header>
+
+<div class="main-layout">
+
+  <!-- LEFT: VIEWER -->
+  <div class="viewer-panel">
+    <div class="viewer-toolbar">
+      <div class="toolbar-dot dot-r"></div>
+      <div class="toolbar-dot dot-y"></div>
+      <div class="toolbar-dot dot-g"></div>
+      <div class="toolbar-spacer"></div>
+      <span class="toolbar-label" id="toolbar-label">HISTOLOGY VIEWER · H&E / PAS / SILVER</span>
+    </div>
+
+    <div class="condition-tabs" id="cond-tabs"></div>
+
+    <div class="slide-stage" id="slide-stage">
+      <div class="slide-img-wrap" id="img-wrap">
+        <img id="slide-img" src="" alt="histology slide" />
+        <div class="anno-layer" id="anno-layer"></div>
+        <div class="quiz-overlay" id="quiz-overlay" style="display:none;">
+          <div class="q-title">⚡ IDENTIFY THIS PATTERN</div>
+          <div class="q-sub">Select your diagnosis →</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-infobar" id="slide-infobar">
+      <span class="infobar-tag" id="infobar-tag">NORMAL</span>
+      <span class="infobar-name" id="infobar-name">Normal Glomerulus</span>
+      <span class="infobar-stain" id="infobar-stain">H&E</span>
+    </div>
+  </div>
+
+  <!-- RIGHT: SIDEBAR -->
+  <div class="sidebar">
+
+    <div class="sidebar-section">
+      <div class="score-row" id="score-row"></div>
+      <div class="progress-wrap"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="progress-label" id="prog-label">0 / 5 correct</div>
+
+      <button class="btn btn-quiz" id="quiz-btn" onclick="startQuiz()">⚡ START QUIZ MODE</button>
+      <div id="feedback"></div>
+      <div id="quiz-answers" class="answer-grid" style="display:none;"></div>
+    </div>
+
+    <div class="sidebar-scroll">
+      <div class="sidebar-section" id="clinical-section">
+        <h3>Clinical Data</h3>
+        <div class="data-row">
+          <span class="data-label">Syndrome</span>
+          <span class="data-value" id="data-syndrome">—</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Symptoms</span>
+          <span class="data-value" id="data-symptoms">—</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Cause</span>
+          <span class="data-value" id="data-cause">—</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">IF / EM</span>
+          <span class="data-value" id="data-if">—</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section" id="findings-section">
+        <h3>Histological Findings</h3>
+        <ul class="feature-list" id="feature-list"></ul>
+        <div class="key-finding" id="key-finding">Select a condition or start quiz</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+<script>
+const data = [
+  {
+    id: 'normal',
+    name: 'Normal Glomerulus',
+    short: 'Normal',
+    img: 'https://imgur.com/ZTicKyn.jpg',
+    tagClass: 'tag-normal',
+    tagText: 'BASELINE',
+    stain: 'H&E / PAS',
+    syndrome: 'No pathology — baseline reference',
+    symptoms: 'Healthy patient, no proteinuria',
+    cause: 'N/A — study this as your normal control',
+    immuno: 'IF negative. EM: normal GBM thickness ~300–350nm',
+    features: [
+      'Open, patent capillary loops — easily visible lumens',
+      'GBM thin and uniform in thickness',
+      'Mesangium not expanded, ≤3 cells per segment',
+      'Bowman\'s space clearly visible and open',
+      'Podocytes and parietal epithelial cells at periphery'
+    ],
+    key: 'MEMORIZE THIS FIRST → everything abnormal is measured against this normal.'
+  },
+  {
+    id: 'mpgn',
+    name: 'MPGN',
+    short: 'MPGN',
+    img: 'https://imgur.com/DYL6tQs.jpg',
+    tagClass: 'tag-mixed',
+    tagText: 'NEPHRITIC/MIXED',
+    stain: 'Silver / PAS',
+    syndrome: 'Nephritic + Nephrotic (mixed picture)',
+    symptoms: 'Haematuria, proteinuria, hypertension, low C3',
+    cause: 'Type I: immune complex (HBV, HCV, SLE). Type II: C3 glomerulopathy',
+    immuno: 'IF: granular IgG + C3. EM: subendothelial deposits (Type I), dense deposits (Type II)',
+    features: [
+      'Lobular accentuation of the entire glomerulus',
+      'GBM thickening with classic "tram-track" / double contour',
+      'Mesangial cell interposition into capillary walls',
+      'Increased mesangial cellularity and matrix',
+      'Capillary lumens narrowed or obliterated'
+    ],
+    key: 'KEY CLUE: tram-track GBM on silver stain = MPGN until proven otherwise.'
+  },
+  {
+    id: 'dpgn',
+    name: 'Diffuse Proliferative GN',
+    short: 'DPGN',
+    img: 'https://imgur.com/UJVNbRZ.jpg',
+    tagClass: 'tag-nephritic',
+    tagText: 'NEPHRITIC',
+    stain: 'H&E',
+    syndrome: 'Nephritic syndrome (haematuria dominant)',
+    symptoms: 'Haematuria, oliguria, hypertension, mild proteinuria, oedema',
+    cause: 'Post-streptococcal (children) · Lupus nephritis class IV',
+    immuno: 'Post-infectious: "starry sky" granular IF. Lupus: full-house pattern (IgG/A/M + C3/C1q)',
+    features: [
+      'Diffuse endocapillary hypercellularity (most glomeruli >50% involved)',
+      'Neutrophil infiltration within capillary loops',
+      'Glomerular tuft swollen and hypercellular',
+      'Mesangial expansion present',
+      'Wire-loop lesions may be seen in lupus class IV'
+    ],
+    key: 'KEY CLUE: diffuse endocapillary proliferation + neutrophils = post-infectious or lupus IV.'
+  },
+  {
+    id: 'rpgn',
+    name: 'Crescentic GN (RPGN)',
+    short: 'RPGN',
+    img: 'https://imgur.com/eunEdWk.jpg',
+    tagClass: 'tag-rpgn',
+    tagText: 'RPGN',
+    stain: 'Silver / H&E',
+    syndrome: 'Rapidly Progressive GN — nephritic, acute RF',
+    symptoms: 'Rapid ↓ GFR over days–weeks, haematuria, RBC casts, oliguria',
+    cause: 'ANCA vasculitis (pANCA/cANCA) · Anti-GBM (Goodpasture) · Immune complex',
+    immuno: 'ANCA: pauci-immune (IF negative). Anti-GBM: linear IgG. Immune: granular IF',
+    features: [
+      'Cellular crescent filling Bowman\'s space — hallmark finding',
+      'Crescents = proliferating parietal epithelial cells',
+      'Compressed, ischaemic glomerular tuft inside',
+      'Fibrin deposition within the crescent',
+      'Bowman\'s capsule rupture in severe cases'
+    ],
+    key: 'KEY CLUE: crescent in Bowman\'s space = RPGN. EMERGENCY — treat urgently!'
+  },
+  {
+    id: 'igan',
+    name: 'IgA Nephropathy',
+    short: 'IgA Neph',
+    img: 'https://imgur.com/zuG4HNJ.jpg',
+    tagClass: 'tag-nephritic',
+    tagText: 'NEPHRITIC',
+    stain: 'PAS / Silver',
+    syndrome: 'Mild nephritic syndrome (commonest worldwide)',
+    symptoms: 'Synpharyngitic haematuria, mild proteinuria, normal BP early',
+    cause: 'Aberrant IgA1 glycosylation → mesangial IgA deposits',
+    immuno: 'IF: mesangial IgA deposits (dominant/codominant). EM: mesangial dense deposits',
+    features: [
+      'Mesangial expansion and hypercellularity — primary finding',
+      'GBM relatively intact — not significantly thickened',
+      'No significant endocapillary proliferation',
+      'Capillary loops remain open in early disease',
+      'Segmental sclerosis may appear in late/severe disease'
+    ],
+    key: 'KEY CLUE: mesangial-only proliferation, open GBM → IgA Neph. Confirm with IF (IgA dominant).'
+  }
+];
+
+let currentIdx = 0;
+let quizMode = false;
+let quizAnswer = null;
+let quizAnswered = false;
+let scores = [];
+let quizOrder = [];
+let quizStep = 0;
+
+function init() {
+  renderTabs();
+  renderScorePips();
+  showCondition(0);
+}
+
+function renderTabs() {
+  const tabs = document.getElementById('cond-tabs');
+  tabs.innerHTML = data.map((d, i) => `
+    <div class="cond-tab ${i===0?'active':''}" id="tab-${i}" onclick="tabClick(${i})">
+      <span class="tab-num">${String(i+1).padStart(2,'0')}</span>
+      ${d.short}
+    </div>
+  `).join('');
+}
+
+function tabClick(i) {
+  if (quizMode) return;
+  currentIdx = i;
+  showCondition(i);
+  document.querySelectorAll('.cond-tab').forEach((t, idx) => t.classList.toggle('active', idx === i));
+}
+
+function showCondition(i) {
+  const d = data[i];
+  const img = document.getElementById('slide-img');
+  img.src = `${d.img}`;
+  img.classList.remove('quiz-blur');
+
+  document.getElementById('infobar-tag').className = `infobar-tag ${d.tagClass}`;
+  document.getElementById('infobar-tag').textContent = d.tagText;
+  document.getElementById('infobar-name').textContent = d.name;
+  document.getElementById('infobar-stain').textContent = d.stain;
+  document.getElementById('toolbar-label').textContent = `SLIDE ${i+1} / 5 · ${d.stain.toUpperCase()}`;
+
+  document.getElementById('data-syndrome').textContent = d.syndrome;
+  document.getElementById('data-symptoms').textContent = d.symptoms;
+  document.getElementById('data-cause').textContent = d.cause;
+  document.getElementById('data-if').textContent = d.immuno;
+
+  document.getElementById('feature-list').innerHTML = d.features.map(f => `<li>${f}</li>`).join('');
+  document.getElementById('key-finding').textContent = d.key;
+
+  document.getElementById('quiz-answers').style.display = 'none';
+  document.getElementById('feedback').style.display = 'none';
+}
+
+function renderScorePips() {
+  const row = document.getElementById('score-row');
+  row.innerHTML = data.map((_, i) => `<div class="score-pip ${i < scores.length ? (scores[i] ? 'hit' : 'miss') : ''}" id="pip-${i}"></div>`).join('');
+}
+
+function updateProgress() {
+  const correct = scores.filter(Boolean).length;
+  document.getElementById('prog-fill').style.width = (scores.length / data.length * 100) + '%';
+  document.getElementById('prog-label').textContent = `${correct} / ${data.length} correct`;
+}
+
+function startQuiz() {
+  quizMode = true;
+  scores = [];
+  quizStep = 0;
+  quizOrder = [...data].sort(() => Math.random() - 0.5);
+  renderScorePips();
+  updateProgress();
+  document.getElementById('quiz-btn').textContent = '🔄 RESTART QUIZ';
+  document.getElementById('quiz-btn').className = 'btn btn-quiz running';
+  document.getElementById('quiz-btn').onclick = startQuiz;
+  document.getElementById('feedback').style.display = 'none';
+  runQuizStep();
+}
+
+function runQuizStep() {
+  if (quizStep >= data.length) { showFinalScore(); return; }
+
+  quizAnswered = false;
+  const q = quizOrder[quizStep];
+  quizAnswer = q.id;
+
+  // Show blurred image
+  const img = document.getElementById('slide-img');
+  img.src = `${q.img}`;
+  img.classList.add('quiz-blur');
+  document.getElementById('quiz-overlay').style.display = 'flex';
+  document.getElementById('infobar-name').textContent = '???';
+  document.getElementById('infobar-tag').className = 'infobar-tag tag-normal';
+  document.getElementById('infobar-tag').textContent = 'IDENTIFY';
+  document.getElementById('infobar-stain').textContent = q.stain;
+
+  // Hide clinical data
+  document.getElementById('feature-list').innerHTML = '<li style="color:var(--muted);font-style:italic;">Hidden during quiz...</li>';
+  document.getElementById('key-finding').textContent = 'Answer to reveal findings.';
+  document.getElementById('data-syndrome').textContent = '—';
+  document.getElementById('data-symptoms').textContent = '—';
+  document.getElementById('data-cause').textContent = '—';
+  document.getElementById('data-if').textContent = '—';
+
+  // Build answer options
+  const others = data.filter(d => d.id !== q.id).sort(() => Math.random() - 0.5).slice(0, 3);
+  const opts = [...others, q].sort(() => Math.random() - 0.5);
+
+  const answersDiv = document.getElementById('quiz-answers');
+  answersDiv.style.display = 'flex';
+  answersDiv.innerHTML = opts.map(o => `
+    <button class="answer-btn" onclick="answerQuiz('${o.id}', this)">${o.name}</button>
+  `).join('');
+
+  document.getElementById('feedback').style.display = 'none';
+  document.querySelectorAll('.cond-tab').forEach(t => t.classList.remove('active'));
+}
+
+function answerQuiz(answerId, btn) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+
+  const correct = answerId === quizAnswer;
+  scores.push(correct);
+
+  document.querySelectorAll('.answer-btn').forEach(b => {
+    b.disabled = true;
+    const bid = b.textContent.trim();
+    const correctData = data.find(d => d.id === quizAnswer);
+    if (b.textContent.trim() === correctData.name) b.classList.add('correct');
+    else if (b === btn && !correct) b.classList.add('wrong');
+  });
+
+  // Show the actual image
+  document.getElementById('slide-img').classList.remove('quiz-blur');
+  document.getElementById('quiz-overlay').style.display = 'none';
+
+  // Reveal data
+  const q = data.find(d => d.id === quizAnswer);
+  document.getElementById('infobar-name').textContent = q.name;
+  document.getElementById('infobar-tag').className = `infobar-tag ${q.tagClass}`;
+  document.getElementById('infobar-tag').textContent = q.tagText;
+  document.getElementById('feature-list').innerHTML = q.features.map(f => `<li>${f}</li>`).join('');
+  document.getElementById('key-finding').textContent = q.key;
+  document.getElementById('data-syndrome').textContent = q.syndrome;
+  document.getElementById('data-symptoms').textContent = q.symptoms;
+  document.getElementById('data-cause').textContent = q.cause;
+  document.getElementById('data-if').textContent = q.immuno;
+
+  // Feedback
+  const fb = document.getElementById('feedback');
+  fb.style.display = 'block';
+  fb.textContent = correct ? '✓ CORRECT!' : '✗ INCORRECT — study the findings above';
+  fb.className = correct ? 'fb-correct' : 'fb-wrong';
+
+  // Update pip
+  renderScorePips();
+  updateProgress();
+
+  // Next button
+  const answersDiv = document.getElementById('quiz-answers');
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'btn btn-next';
+  nextBtn.style.marginTop = '4px';
+  nextBtn.textContent = quizStep < data.length - 1 ? '→ NEXT SLIDE' : '→ SEE RESULTS';
+  nextBtn.onclick = () => { quizStep++; runQuizStep(); };
+  answersDiv.appendChild(nextBtn);
+}
+
+function showFinalScore() {
+  const correct = scores.filter(Boolean).length;
+  const msgs = [
+    ['0','Keep going — you can do this! 💪', ''],
+    ['1','Good start! Review and retry 📖', ''],
+    ['2','Getting there! Almost halfway 🌱', ''],
+    ['3','Solid work! Review the missed ones 🌟', ''],
+    ['4','Nearly perfect! One more push 🎯', ''],
+    ['5','PERFECT SCORE! You\'re ready 🏆', '💙 so proud of you']
+  ];
+  const [, msg, sub] = msgs[correct];
+
+  document.getElementById('quiz-answers').style.display = 'none';
+  document.getElementById('feedback').style.display = 'none';
+  document.getElementById('slide-img').classList.remove('quiz-blur');
+  document.getElementById('quiz-overlay').style.display = 'none';
+
+  // Show celebration in findings area
+  document.getElementById('feature-list').innerHTML = '';
+  document.getElementById('key-finding').innerHTML = `
+    <div class="final-score fade-in" style="background:none;border:none;padding:0;">
+      <div class="big-num">${correct}/5</div>
+      <div class="big-label">${msg}</div>
+      ${sub ? `<div class="love-msg">${sub}</div>` : ''}
+      <button class="btn btn-quiz" style="margin-top:1rem;" onclick="resetQuiz();">↩ BACK TO STUDY MODE</button>
+    </div>
+  `;
+
+  document.getElementById('quiz-btn').style.display = 'none';
+  quizMode = false;
+}
+
+function resetQuiz() {
+  quizMode = false;
+  scores = [];
+  quizStep = 0;
+  const q = data[0];
+  document.getElementById('feature-list').innerHTML = q.features.map(f => `<li>${f}</li>`).join('');
+  document.getElementById('key-finding').innerHTML = q.key;
+  document.getElementById('quiz-btn').style.display = 'block';
+  document.getElementById('quiz-btn').textContent = '⚡ START QUIZ MODE';
+  document.getElementById('quiz-btn').className = 'btn btn-quiz';
+  document.getElementById('quiz-btn').onclick = startQuiz;
+  renderScorePips();
+  updateProgress();
+  showCondition(0);
+}
+
+init();
+</script>
+</body>
+</html>
